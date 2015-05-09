@@ -32,7 +32,6 @@ public class StartServer extends ActionBarActivity {
         catch(Exception e) {
             e.printStackTrace();
         }
-
     }
 
     private void appendContent(byte[] text){
@@ -53,7 +52,6 @@ public class StartServer extends ActionBarActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     @Override
