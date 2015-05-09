@@ -7,7 +7,8 @@
 
     <WebView
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="0dp"
+        android:layout_weight="9"
         android:id="@+id/webview"
         android:layout_marginBottom="10dp"></WebView>
 
@@ -19,14 +20,15 @@
 
         <EditText
             android:layout_width="300dp"
-            android:layout_height="10dp"
+            android:layout_height="50dp"
             android:hint="PASTE"
             android:id="@+id/paste"
             android:layout_gravity="center_vertical"/>
-        <Button
+        <ImageButton
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="match_parent"
             android:text="Paste"
+            android:src="@mipmap/ic_send_grey600_48dp"
             android:id="@+id/button2"
             android:onClick="paste"
             android:layout_gravity="bottom" />
