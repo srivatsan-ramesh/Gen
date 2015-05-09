@@ -7,6 +7,9 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+        <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+        <uses-permission android:name="android.permission.INTERNET" />
+
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
@@ -15,6 +18,10 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".StartServer"
+            android:label="@string/title_activity_start_server" >
         </activity>
     </application>
 
