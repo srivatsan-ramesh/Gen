@@ -3,6 +3,9 @@ package com.example.srivatsan.gen;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
@@ -33,8 +36,12 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         myClipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
         pasteField = (EditText)findViewById(R.id.paste);
+        WifiManager wifiMan = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInf = wifiMan.getConnectionInfo();
+        int ipAddress = wifiInf.getIpAddress();
+        String ip = String.format("%d.%d.%d.%d", (ipAddress & 0xff),(ipAddress >> 8 & 0xff),(ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
 
-        final String strURL = "192.168.25.60:8080//Gen/index.html";
+        final String strURL = ip + ":8080//Gen/index.html";
 
         Button btnPaste = (Button) findViewById(R.id.button2);
         btnPaste.setOnClickListener(new View.OnClickListener() {
