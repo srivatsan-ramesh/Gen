@@ -22,7 +22,7 @@ public class StartServer extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start_server);
 
-        String str = "<img src=\"../Screenshot_2015-04-26-16-24-06.png\"></img>";
+        String str = "<img style='width:50%' src=\"../Screenshot_2015-04-26-16-24-06.png\"></img>";
         appendContent(str.getBytes());
 
         try {

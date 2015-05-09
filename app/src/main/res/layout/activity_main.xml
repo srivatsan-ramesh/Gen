@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:text="Paste"
-            android:src="@mipmap/ic_send_grey600_48dp"
+            android:src="@mipmap/ic_launcher"
             android:id="@+id/button2"
             android:onClick="paste"
             android:layout_gravity="bottom" />
