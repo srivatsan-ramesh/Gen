@@ -6,6 +6,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
@@ -105,7 +106,7 @@ public class MainActivity extends ActionBarActivity {
         final String strURL = "http://" + ip + ":8080//Gen/index.html";
         fileServerURL = "http://" + ip + ":8080//Gen/index.html";
 
-        if(intent.getClipData()!=null) {
+        if(intent.getAction().equals(Intent.ACTION_SEND)) {
             ClipData clipData = intent.getClipData();
             Log.i("clipdata", clipData.toString());
             Uri uri = clipData.getItemAt(0).getUri();
@@ -115,7 +116,13 @@ public class MainActivity extends ActionBarActivity {
             String absPath = getRealPathFromURI(uri);
             absPath = absPath.substring(absPath.lastIndexOf("emulated/0") + 11, absPath.length());
             Log.i("absPath", absPath);
-
+            SharedPreferences.Editor editor = getSharedPreferences("ChatHistory", MODE_PRIVATE).edit();
+            SharedPreferences prefs = getSharedPreferences("ChatHistory", MODE_PRIVATE);
+            int no_of_chats = prefs.getInt("no_of_chats", 0);
+            no_of_chats+=1;
+            editor.putString(no_of_chats+"", "{type: 'image', content:'" + absPath+"'}");
+            editor.putInt("no_of_chats",no_of_chats);
+            editor.commit();
             String str = "<div style='width=100%'><img style='width:50%' src=\"../" + absPath + "\"></img></div>";
             appendContent(str.getBytes());
             webView.loadUrl(strURL);
@@ -126,6 +133,13 @@ public class MainActivity extends ActionBarActivity {
         btnPaste.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                SharedPreferences.Editor editor = getSharedPreferences("ChatHistory", MODE_PRIVATE).edit();
+                SharedPreferences prefs = getSharedPreferences("ChatHistory", MODE_PRIVATE);
+                int no_of_chats = prefs.getInt("no_of_chats", 0);
+                no_of_chats+=1;
+                editor.putString(no_of_chats+"", "{type: 'text', content:'" + pasteField.getText().toString()+"'}");
+                editor.putInt("no_of_chats",no_of_chats);
+                editor.commit();
                 String text = "<div style='width=100%;'>"+pasteField.getText().toString()+"</div>";
                 appendContent(text.getBytes());
                 webView.loadUrl(strURL);
