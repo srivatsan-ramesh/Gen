@@ -11,9 +11,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.example.srivatsan.gen.util.HTTPD;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,7 +28,6 @@ public class MainActivity extends ActionBarActivity {
     private ClipboardManager myClipboard;
     private ClipData myClip;
     private EditText pasteField;
-    WebView webView = (WebView) findViewById(R.id.webview);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,8 +35,23 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         myClipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
         pasteField = (EditText)findViewById(R.id.paste);
+        final WebView webView = (WebView) findViewById(R.id.webview);
 
-        final String strURL = "192.168.25.60:8080//Gen/index.html";
+        final String strURL = "http://192.168.25.60:8080//Gen/index.html";
+
+        try {
+            HTTPD fileRendering = new HTTPD(getApplicationContext(), 8080);
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        webView.setWebViewClient(new WebViewClient() {
+           @Override
+            public void onPageFinished(WebView view, String url) {
+               view.scrollTo(0, view.getBottom());
+           }
+        });
 
         Button btnPaste = (Button) findViewById(R.id.button2);
         btnPaste.setOnClickListener(new View.OnClickListener() {
