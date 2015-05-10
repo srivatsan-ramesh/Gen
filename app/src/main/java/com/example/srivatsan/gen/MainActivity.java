@@ -1,6 +1,8 @@
 package com.example.srivatsan.gen;
 
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -15,19 +17,22 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.example.srivatsan.gen.util.HTTPD;
+import com.example.srivatsan.gen.util.RecyclerViewAdapter;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -46,17 +51,37 @@ public class MainActivity extends ActionBarActivity {
     private ClipData myClip;
     private EditText pasteField;
     WebView webView;
+    Intent intent;
     String fileServerURL;
-
+    private RecyclerView mRecyclerView;
+    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
+    public static  SharedPreferences prefs;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_display_element);
+        Toolbar toolbar= (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        prefs = getSharedPreferences("ChatHistory", MODE_PRIVATE);
 
-        Intent intent = getIntent();
+        mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
+
+        // use this setting to improve performance if you know that changes
+        // in content do not change the layout size of the RecyclerView
+        mRecyclerView.setHasFixedSize(false);
+
+        // use a linear layout manager
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+
+        // specify an adapter (see also next example)
+        mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text", getApplicationContext());
+        mRecyclerView.setAdapter(mAdapter);
+
+        intent = getIntent();
         final String action = intent.getAction();
         final String type = intent.getType();
-
 
 
        /* if(type!=null && action.equals(Intent.ACTION_SEND)){
@@ -85,16 +110,18 @@ public class MainActivity extends ActionBarActivity {
         int ipAddress = wifiInf.getIpAddress();
         String ip = String.format("%d.%d.%d.%d", (ipAddress & 0xff),(ipAddress >> 8 & 0xff),(ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
 
-        webView = (WebView) findViewById(R.id.webview);
+        try {
+            HTTPD fileRendering = new HTTPD(getApplicationContext(), 8080);
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        /*webView = (WebView) findViewById(R.id.webview);
 
 
 
-                try {
-                    HTTPD fileRendering = new HTTPD(getApplicationContext(), 8080);
-                }
-                catch(Exception e) {
-                    e.printStackTrace();
-                }
+
 
              webView.setWebViewClient(new WebViewClient() {
                        @Override
@@ -102,10 +129,11 @@ public class MainActivity extends ActionBarActivity {
                                view.scrollTo(0, view.getBottom());
                           }
                    });
+*/
 
         final String strURL = "http://" + ip + ":8080//Gen/index.html";
         fileServerURL = "http://" + ip + ":8080//Gen/index.html";
-
+        if(intent.getAction()!=null)
         if(intent.getAction().equals(Intent.ACTION_SEND)) {
             ClipData clipData = intent.getClipData();
             Log.i("clipdata", clipData.toString());
@@ -123,9 +151,11 @@ public class MainActivity extends ActionBarActivity {
             editor.putString(no_of_chats+"", "{type: 'image', content:'" + absPath+"'}");
             editor.putInt("no_of_chats",no_of_chats);
             editor.commit();
-            String str = "<div style='width=100%'><img style='width:50%' src=\"../" + absPath + "\"></img></div>";
+            String str = "<div class=\"pin\"><img src=\"../" + absPath + "\"></img></div>";
             appendContent(str.getBytes());
-            webView.loadUrl(strURL);
+            mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text", getApplicationContext());
+            mRecyclerView.setAdapter(mAdapter);
+            mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
 
         }
 
@@ -140,12 +170,15 @@ public class MainActivity extends ActionBarActivity {
                 editor.putString(no_of_chats+"", "{type: 'text', content:'" + pasteField.getText().toString()+"'}");
                 editor.putInt("no_of_chats",no_of_chats);
                 editor.commit();
-                String text = "<div style='width=100%;'>"+pasteField.getText().toString()+"</div>";
+                String text = "<div class=\"pin\"><p>" + pasteField.getText().toString() + "</p></div>";
+                //String text = "<div style='width=100%;'>"+pasteField.getText().toString()+"</div>";
                 appendContent(text.getBytes());
-                webView.loadUrl(strURL);
+                mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text", getApplicationContext());
+                mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+                mRecyclerView.setAdapter(mAdapter);
             }
         });
-        webView.loadUrl(strURL);
+        //webView.loadUrl(strURL);
     }
 
     private String getRealPathFromURI(Uri contentUri) {
@@ -196,17 +229,110 @@ public class MainActivity extends ActionBarActivity {
         f1.mkdirs();
         Log.i("f1", String.valueOf(f1));
         File f = new File(f1.getPath()+File.separator+"index.html");
-        try {
-            FileOutputStream fout = new FileOutputStream(f,true);
-            fout.write(text);
-            fout.flush();
-            fout.close();
+        if(!f.exists()) {
+            try {
+                String str = "<style>\n" +
+                        "body {\n" +
+                        "\tbackground: url(http://subtlepatterns.com/patterns/scribble_light.png) \n" +
+                        "}\n" +
+                        "\n" +
+                        "#wrapper {\n" +
+                        "\twidth: 90%;\n" +
+                        "\tmax-width: 1100px;\n" +
+                        "\tmin-width: 800px;\n" +
+                        "\tmargin: 50px auto;\n" +
+                        "}\n" +
+                        "\n" +
+                        "#columns {\n" +
+                        "\t-webkit-column-count: 3;\n" +
+                        "\t-webkit-column-gap: 10px;\n" +
+                        "\t-webkit-column-fill: auto;\n" +
+                        "\t-moz-column-count: 3;\n" +
+                        "\t-moz-column-gap: 10px;\n" +
+                        "\t-moz-column-fill: auto;\n" +
+                        "\tcolumn-count: 3;\n" +
+                        "\tcolumn-gap: 15px;\n" +
+                        "\tcolumn-fill: auto;\n" +
+                        "}\n" +
+                        "\n" +
+                        ".pin {\n" +
+                        "\tdisplay: inline-block;\n" +
+                        "\tbackground: #FEFEFE;\n" +
+                        "\tborder: 2px solid #FAFAFA;\n" +
+                        "\tbox-shadow: 0 1px 2px rgba(34, 25, 25, 0.4);\n" +
+                        "\tmargin: 0 2px 15px;\n" +
+                        "\twidth:80%;\n" +
+                        "\t-webkit-column-break-inside: avoid;\n" +
+                        "\t-moz-column-break-inside: avoid;\n" +
+                        "\tcolumn-break-inside: avoid;\n" +
+                        "\tpadding: 15px;\n" +
+                        "\tpadding-bottom: 5px;\n" +
+                        "\tbackground: -webkit-linear-gradient(45deg, #FFF, #F9F9F9);\n" +
+                        "\topacity: 1;\n" +
+                        "\t\n" +
+                        "\t-webkit-transition: all .2s ease;\n" +
+                        "\t-moz-transition: all .2s ease;\n" +
+                        "\t-o-transition: all .2s ease;\n" +
+                        "\ttransition: all .2s ease;\n" +
+                        "}\n" +
+                        "\n" +
+                        ".pin img {\n" +
+                        "\twidth: 100%;\n" +
+                        "\tborder-bottom: 1px solid #ccc;\n" +
+                        "\tpadding-bottom: 15px;\n" +
+                        "\tmargin-bottom: 5px;\n" +
+                        "}\n" +
+                        "\n" +
+                        ".pin p {\n" +
+                        "\tfont: 12px/18px Arial, sans-serif;\n" +
+                        "\tcolor: #333;\n" +
+                        "\tmargin: 0;\n" +
+                        "}\n" +
+                        "\n" +
+                        "@media (min-width: 960px) {\n" +
+                        "\t#columns {\n" +
+                        "\t\t-webkit-column-count: 4;\n" +
+                        "\t\t-moz-column-count: 4;\n" +
+                        "\t\tcolumn-count: 4;\n" +
+                        "\t}\n" +
+                        "}\n" +
+                        "\n" +
+                        "@media (min-width: 1100px) {\n" +
+                        "\t#columns {\n" +
+                        "\t\t-webkit-column-count: 5;\n" +
+                        "\t\t-moz-column-count: 5;\n" +
+                        "\t\tcolumn-count: 5;\n" +
+                        "\t}\n" +
+                        "}\n" +
+                        "</style>\n<div id=\"wrapper\"><div id=\"columns\">";
+                FileOutputStream fout = new FileOutputStream(f, true);
+                //String str2 = text.toString();
+                fout.write((str).getBytes());
+                fout.flush();
+                fout.close();
+                FileOutputStream fout1 = new FileOutputStream(f, true);
+                //String str2 = text.toString();
+                fout1.write(text);
+                fout1.flush();
+                fout1.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            try {
+                FileOutputStream fout = new FileOutputStream(f, true);
+                fout.write(text);
+                fout.flush();
+                fout.close();
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Log.i("Empty File", "Not found");
-        } catch (IOException e) {
-            e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                Log.i("Empty File", "Not found");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -226,6 +352,7 @@ public class MainActivity extends ActionBarActivity {
     public void onResume() {
         super.onResume();
         initClipboardData();
+
     }
    /* public void copy(View view){
         myClipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
@@ -241,6 +368,29 @@ public class MainActivity extends ActionBarActivity {
         ClipData.Item item = abc.getItemAt(0);
         String text = item.getText().toString();
         pasteField.setText(text);
+        if(intent.hasExtra("sendtext")){
+            if(intent.getBooleanExtra("sendtext",false)){
+                SharedPreferences.Editor editor = getSharedPreferences("ChatHistory", MODE_PRIVATE).edit();
+                SharedPreferences prefs = getSharedPreferences("ChatHistory", MODE_PRIVATE);
+                int no_of_chats = prefs.getInt("no_of_chats", 0);
+                no_of_chats+=1;
+                editor.putString(no_of_chats+"", "{type: 'text', content:'" + pasteField.getText().toString()+"'}");
+                editor.putInt("no_of_chats",no_of_chats);
+                editor.commit();
+                String pastef = pasteField.getText().toString();
+                String text1;
+                if(pastef.contains("http://") || pastef.contains("https://") || pastef.contains("www.")){
+                    text1 = "<div class=\"pin\"><a href='"+pastef+"'><p>" + pasteField.getText().toString() + "</p></a></div>";
+                }
+                else
+                    text1 = "<div class=\"pin\"><p>" + pasteField.getText().toString() + "</p></div>";
+                //String text = "<div style='width=100%;'>"+pasteField.getText().toString()+"</div>";
+                appendContent(text1.getBytes());
+                mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text", getApplicationContext());
+                mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+                mRecyclerView.setAdapter(mAdapter);
+            }
+        }
         //Toast.makeText(getApplicationContext(), "Text Pasted",
                 //Toast.LENGTH_SHORT).show();
     }
@@ -368,8 +518,6 @@ public class MainActivity extends ActionBarActivity {
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
-                Log.e("Upload file to server Exception", "Exception : "
-                        + e.getMessage(), e);
             }
             return serverResponseCode;
 
@@ -432,6 +580,38 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            NotificationManager mNotificationManager;
+            mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationCompat.Builder mNotificationBuilder;
+            mNotificationBuilder = new NotificationCompat.Builder(getApplicationContext())
+
+                    .setContentTitle(getResources().getString(R.string.app_name))
+                            //.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_notif_logo))
+                    .setSmallIcon(R.mipmap.ic_menu_share)
+                    .setPriority(NotificationCompat.PRIORITY_MIN)
+                    .setAutoCancel(false)
+                    .setOngoing(true)
+                            //.setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                            //.setSound(soundUri)
+                    .setOnlyAlertOnce(true)
+                    //.setColor(getResources)
+            ;
+            Intent intent = new Intent(MainActivity.this, MainActivity.class);
+            //intent.setAction(Intent.ACTION_SEND);
+            intent.putExtra("sendtext",true);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP |
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pIntent = PendingIntent.getActivity(MainActivity.this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+            mNotificationBuilder.setContentText("Share the file on clipboard")
+                    .setContentIntent(pIntent)
+
+                    .setWhen(System.currentTimeMillis());
+
+            mNotificationBuilder.addAction(R.mipmap.ic_menu_share,"SHARE",pIntent);
+            mNotificationManager.notify(0, mNotificationBuilder.build());
+            mNotificationBuilder.setContentTitle(getResources().getString(R.string.app_name));
             return true;
         }
         return super.onOptionsItemSelected(item);

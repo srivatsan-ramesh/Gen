@@ -10,7 +10,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_menu_share"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
@@ -54,10 +54,7 @@
             android:name=".StartServer"
             android:label=".StartServer" >
         </activity>
-        <activity
-            android:name=".displayElement"
-            android:label="@string/title_activity_display_element" >
-        </activity>
+
     </application>
 
 </manifest>

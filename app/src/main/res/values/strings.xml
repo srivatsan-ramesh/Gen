@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">Gen</string>
+    <string name="app_name">Lap Chat</string>
 
     <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_settings">Add Notification</string>
     <string name="title_activity_display_element">displayElement</string>
 </resources>

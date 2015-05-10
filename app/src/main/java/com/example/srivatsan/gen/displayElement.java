@@ -28,14 +28,14 @@ public class displayElement extends ActionBarActivity {
 
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
-        mRecyclerView.setHasFixedSize(true);
+        mRecyclerView.setHasFixedSize(false);
 
         // use a linear layout manager
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
         // specify an adapter (see also next example)
-        mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text");
+        mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text", getApplicationContext());
         mRecyclerView.setAdapter(mAdapter);
     }
 
