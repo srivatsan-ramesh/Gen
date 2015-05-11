@@ -29,6 +29,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -146,41 +147,62 @@ public class MainActivity extends ActionBarActivity {
         if(intent.getAction().equals(Intent.ACTION_SEND)) {
             ClipData clipData = intent.getClipData();
             Log.i("clipdata", clipData.toString());
-            Uri uri = clipData.getItemAt(0).getUri();
-
-            Log.i("uri",uri.toString());
-            Log.i("encpath", uri.getEncodedPath());
-
-            try {
-                Log.i("uripath", getPath(getApplicationContext(), uri));
-
-                String absPath = getPath(getApplicationContext(), uri);
-                absPath = absPath.substring(absPath.lastIndexOf("sdcard/0") + 17, absPath.length());
-                Log.i("absPath", absPath);
+            if (clipData.getDescription().getMimeType(0).equals("text/plain")) {
+                String data = clipData.getItemAt(0).getText().toString();
+                Log.i("data", data);
+                pasteField.setText(data);
+                copy("");
 
                 SharedPreferences.Editor editor = getSharedPreferences("ChatHistory", MODE_PRIVATE).edit();
                 SharedPreferences prefs = getSharedPreferences("ChatHistory", MODE_PRIVATE);
                 int no_of_chats = prefs.getInt("no_of_chats", 0);
                 no_of_chats+=1;
-                editor.putString(no_of_chats+"", "{type: 'image', content:'" + absPath+"'}");
+                editor.putString(no_of_chats+"", "{type: 'text', content:'" + pasteField.getText().toString()+"'}");
                 editor.putInt("no_of_chats",no_of_chats);
                 editor.commit();
-
-                String[] splitPath = absPath.split("/");
-                String filename = splitPath[splitPath.length-1];
-
-                String str = "<div class=\"pin\"><a href=\"../" + absPath + "\">" + filename + "</a></div>";
-                appendContent(str.getBytes());
-
+                String text = "<div class=\"pin\"><p>" + pasteField.getText().toString() + "</p></div>";
+                //String text = "<div style='width=100%;'>"+pasteField.getText().toString()+"</div>";
+                appendContent(text.getBytes());
                 mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text", getApplicationContext());
-                mRecyclerView.setAdapter(mAdapter);
                 mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+                mRecyclerView.setAdapter(mAdapter);
+
+            } else {
+                Uri uri = clipData.getItemAt(0).getUri();
+
+                Log.i("uri", uri.toString());
+                Log.i("encpath", uri.getEncodedPath());
+
+                try {
+                    Log.i("uripath", getPath(getApplicationContext(), uri));
+
+                    String absPath = getPath(getApplicationContext(), uri);
+                    absPath = absPath.substring(absPath.lastIndexOf("sdcard/0") + 17, absPath.length());
+                    Log.i("absPath", absPath);
+
+                    SharedPreferences.Editor editor = getSharedPreferences("ChatHistory", MODE_PRIVATE).edit();
+                    SharedPreferences prefs = getSharedPreferences("ChatHistory", MODE_PRIVATE);
+                    int no_of_chats = prefs.getInt("no_of_chats", 0);
+                    no_of_chats += 1;
+                    editor.putString(no_of_chats + "", "{type: 'image', content:'" + absPath + "'}");
+                    editor.putInt("no_of_chats", no_of_chats);
+                    editor.commit();
+
+                    String[] splitPath = absPath.split("/");
+                    String filename = splitPath[splitPath.length - 1];
+
+                    String str = "<div class=\"pin\"><a href=\"../" + absPath + "\">" + filename + "</a></div>";
+                    appendContent(str.getBytes());
+
+                    mAdapter = new RecyclerViewAdapter(new String[]{"12334", "sdfghj"}/*dataset*/, "Text", getApplicationContext());
+                    mRecyclerView.setAdapter(mAdapter);
+                    mRecyclerView.scrollToPosition(mAdapter.getItemCount() - 1);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
             }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-
         }
 
         //TODO : extend this for multiple files..
@@ -458,14 +480,11 @@ public class MainActivity extends ActionBarActivity {
         initClipboardData();
 
     }
-   /* public void copy(View view){
+    public void copy(String text){
         myClipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-        String text = copyField.getText().toString();
         myClip = ClipData.newPlainText("text", text);
         myClipboard.setPrimaryClip(myClip);
-        Toast.makeText(getApplicationContext(), "Text Copied",
-                Toast.LENGTH_SHORT).show();
-    }*/
+    }
     public void paste(){
         myClipboard = (ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
         ClipData abc = myClipboard.getPrimaryClip();
