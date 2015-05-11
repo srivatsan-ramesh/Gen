@@ -29,6 +29,7 @@ import android.view.View;
 import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.srivatsan.gen.util.HTTPD;
@@ -109,7 +110,8 @@ public class MainActivity extends ActionBarActivity {
         WifiInfo wifiInf = wifiMan.getConnectionInfo();
         int ipAddress = wifiInf.getIpAddress();
         String ip = String.format("%d.%d.%d.%d", (ipAddress & 0xff),(ipAddress >> 8 & 0xff),(ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
-
+        TextView ipadd = (TextView) findViewById(R.id.ipaddress);
+        ipadd.setText("Point your PC browser to http://"+ip+":8080/Gen/" );
         try {
             HTTPD fileRendering = new HTTPD(getApplicationContext(), 8080);
         }
@@ -604,7 +606,7 @@ public class MainActivity extends ActionBarActivity {
                     Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pIntent = PendingIntent.getActivity(MainActivity.this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 
-            mNotificationBuilder.setContentText("Share the file on clipboard")
+            mNotificationBuilder.setContentText("Share the text on clipboard")
                     .setContentIntent(pIntent)
 
                     .setWhen(System.currentTimeMillis());

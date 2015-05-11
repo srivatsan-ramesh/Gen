@@ -10,6 +10,11 @@
     tools:context=".displayElement">
     <include layout="@layout/toolbar"
         android:id="@+id/toolbar"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#F50057"
+        android:id="@+id/ipaddress"/>
     <!-- A RecyclerView with some commonly used attributes -->
     <android.support.v7.widget.RecyclerView
         android:layout_width="match_parent"
