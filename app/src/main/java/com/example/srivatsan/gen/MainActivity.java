@@ -10,6 +10,8 @@ import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -41,10 +43,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -140,26 +147,43 @@ public class MainActivity extends ActionBarActivity {
             ClipData clipData = intent.getClipData();
             Log.i("clipdata", clipData.toString());
             Uri uri = clipData.getItemAt(0).getUri();
+
             Log.i("uri",uri.toString());
+            Log.i("encpath", uri.getEncodedPath());
 
+            try {
+                Log.i("uripath", getPath(getApplicationContext(), uri));
 
-            String absPath = getRealPathFromURI(uri);
-            absPath = absPath.substring(absPath.lastIndexOf("emulated/0") + 11, absPath.length());
-            Log.i("absPath", absPath);
-            SharedPreferences.Editor editor = getSharedPreferences("ChatHistory", MODE_PRIVATE).edit();
-            SharedPreferences prefs = getSharedPreferences("ChatHistory", MODE_PRIVATE);
-            int no_of_chats = prefs.getInt("no_of_chats", 0);
-            no_of_chats+=1;
-            editor.putString(no_of_chats+"", "{type: 'image', content:'" + absPath+"'}");
-            editor.putInt("no_of_chats",no_of_chats);
-            editor.commit();
-            String str = "<div class=\"pin\"><img src=\"../" + absPath + "\"></img></div>";
-            appendContent(str.getBytes());
-            mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text", getApplicationContext());
-            mRecyclerView.setAdapter(mAdapter);
-            mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+                String absPath = getPath(getApplicationContext(), uri);
+                absPath = absPath.substring(absPath.lastIndexOf("sdcard/0") + 17, absPath.length());
+                Log.i("absPath", absPath);
+
+                SharedPreferences.Editor editor = getSharedPreferences("ChatHistory", MODE_PRIVATE).edit();
+                SharedPreferences prefs = getSharedPreferences("ChatHistory", MODE_PRIVATE);
+                int no_of_chats = prefs.getInt("no_of_chats", 0);
+                no_of_chats+=1;
+                editor.putString(no_of_chats+"", "{type: 'image', content:'" + absPath+"'}");
+                editor.putInt("no_of_chats",no_of_chats);
+                editor.commit();
+
+                String[] splitPath = absPath.split("/");
+                String filename = splitPath[splitPath.length-1];
+
+                String str = "<div class=\"pin\"><a href=\"../" + absPath + "\">" + filename + "</a></div>";
+                appendContent(str.getBytes());
+
+                mAdapter = new RecyclerViewAdapter(new String[]{"12334","sdfghj"}/*dataset*/,"Text", getApplicationContext());
+                mRecyclerView.setAdapter(mAdapter);
+                mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
 
         }
+
+        //TODO : extend this for multiple files..
 
         ImageButton btnPaste = (ImageButton) findViewById(R.id.button2);
         btnPaste.setOnClickListener(new View.OnClickListener() {
@@ -181,6 +205,84 @@ public class MainActivity extends ActionBarActivity {
             }
         });
         //webView.loadUrl(strURL);
+    }
+
+    public static String getPath(Context context, Uri uri) throws URISyntaxException {
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
+            String[] projection = { "_data" };
+            Cursor cursor = null;
+
+            try {
+                cursor = context.getContentResolver().query(uri, projection, null, null, null);
+                int column_index = cursor.getColumnIndexOrThrow("_data");
+                if (cursor.moveToFirst()) {
+                    return cursor.getString(column_index);
+                }
+            } catch (Exception e) {
+                // Eat it
+            }
+        }
+        else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+
+        return null;
+    }
+
+    private File saveBitmap(Bitmap bmp, String path, String filename) {
+        String extStorageDirectory = Environment.getExternalStorageDirectory()
+                .toString();
+        OutputStream outStream = null;
+
+        File file = new File(filename + ".png");
+        if (file.exists()) {
+            file.delete();
+            file = new File(extStorageDirectory + File.separator + path + File.separator, bmp + ".png");
+            Log.e("file exist", "" + file + ",Bitmap= " + bmp);
+        }
+        try {
+            outStream = new FileOutputStream(file);
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+            outStream.flush();
+            outStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Log.e("file", "" + file);
+        return file;
+
+    }
+
+    public static Bitmap getThumbnail(Uri uri, Context context) throws FileNotFoundException, IOException{
+        InputStream input = context.getContentResolver().openInputStream(uri);
+
+        BitmapFactory.Options onlyBoundsOptions = new BitmapFactory.Options();
+        onlyBoundsOptions.inJustDecodeBounds = true;
+        onlyBoundsOptions.inDither=true;//optional
+        onlyBoundsOptions.inPreferredConfig=Bitmap.Config.ARGB_8888;//optional
+        BitmapFactory.decodeStream(input, null, onlyBoundsOptions);
+        input.close();
+        if ((onlyBoundsOptions.outWidth == -1) || (onlyBoundsOptions.outHeight == -1))
+            return null;
+
+        int originalSize = (onlyBoundsOptions.outHeight > onlyBoundsOptions.outWidth) ? onlyBoundsOptions.outHeight : onlyBoundsOptions.outWidth;
+
+        double ratio = 1.0;
+
+        BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
+        bitmapOptions.inSampleSize = getPowerOfTwoForSampleRatio(ratio);
+        bitmapOptions.inDither=true;//optional
+        bitmapOptions.inPreferredConfig=Bitmap.Config.ARGB_8888;//optional
+        input = context.getContentResolver().openInputStream(uri);
+        Bitmap bitmap = BitmapFactory.decodeStream(input, null, bitmapOptions);
+        input.close();
+        return bitmap;
+    }
+
+    private static int getPowerOfTwoForSampleRatio(double ratio){
+        int k = Integer.highestOneBit((int)Math.floor(ratio));
+        if(k==0) return 1;
+        else return k;
     }
 
     private String getRealPathFromURI(Uri contentUri) {
